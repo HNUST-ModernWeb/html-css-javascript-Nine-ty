@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级Web课程 - 个人信息卡片</title>
+    <style>
+        /* --- 这里是原本 style.css 的内容 --- */
+        /* 基础重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #333;
+            font-weight: 300;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            width: 350px;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* 头像上传区域 */
+        .avatar-container {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 20px;
+        }
+
+        #avatar-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #eee;
+            transition: border-color 0.3s;
+        }
+
+        .upload-btn {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #007bff;
+            color: white;
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .upload-btn input {
+            position: absolute;
+            opacity: 0;
+            left: 0;
+            top: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 表单样式 */
+        .info-section {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .field {
+            margin-bottom: 15px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #007bff;
+        }
+
+        /* 按钮样式 */
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+
+        button:hover {
+            background: #0056b3;
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+
+        /* 状态提示 */
+        #status-msg {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #28a745;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>个人信息卡片</h1>
+
+    <div class="card">
+        <div class="avatar-container">
+            <img src="https://via.placeholder.com/100" id="avatar-preview" alt="头像">
+            <div class="upload-btn">
+                <span>更换头像</span>
+                <input type="file" id="avatar-input" accept="image/*">
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div class="field">
+                <label>姓名</label>
+                <input type="text" id="name-input" value="张三" placeholder="请输入姓名">
+            </div>
+            
+            <div class="field">
+                <label>个人简介</label>
+                <textarea id="bio-input" rows="3" placeholder="介绍一下你自己...">热爱前端开发的极客。</textarea>
+            </div>
+        </div>
+
+        <button id="save-btn">保存修改</button>
+        <p id="status-msg">已保存内容</p>
+    </div>
+
+    <script>
+        /* --- 这里是原本 script.js 的内容 --- */
+        document.addEventListener('DOMContentLoaded', () => {
+            // 获取 DOM 元素
+            const nameInput = document.getElementById('name-input');
+            const bioInput = document.getElementById('bio-input');
+            const avatarPreview = document.getElementById('avatar-preview');
+            const avatarInput = document.getElementById('avatar-input');
+            const saveBtn = document.getElementById('save-btn');
+            const statusMsg = document.getElementById('status-msg');
+
+            // --- 1. 初始化：页面加载时读取本地存储 ---
+            const savedName = localStorage.getItem('userName');
+            const savedBio = localStorage.getItem('userBio');
+            const savedAvatar = localStorage.getItem('userAvatar');
+
+            if (savedName) nameInput.value = savedName;
+            if (savedBio) bioInput.value = savedBio;
+            if (savedAvatar) avatarPreview.src = savedAvatar;
+
+            // --- 2. 头像处理：预览并转为 Base64 字符串存储 ---
+            avatarInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const base64Image = e.target.result;
+                        avatarPreview.src = base64Image;
+                        // 注意：由于头像数据较大，我们等点击保存按钮时再统一存入 localStorage
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+
+            // --- 3. 保存功能：将内容写入 localStorage ---
+            saveBtn.addEventListener('click', () => {
+                // 获取当前输入的值
+                const currentName = nameInput.value;
+                const currentBio = bioInput.value;
+                const currentAvatar = avatarPreview.src;
+
+                // 写入本地存储
+                localStorage.setItem('userName', currentName);
+                localStorage.setItem('userBio', currentBio);
+                localStorage.setItem('userAvatar', currentAvatar); // 存储头像的 Base64 编码
+
+                // 模拟保存状态反馈
+                showSuccessFeedback();
+            });
+
+            // 提示动画函数
+            function showSuccessFeedback() {
+                saveBtn.innerText = '正在保存...';
+                setTimeout(() => {
+                    saveBtn.innerText = '保存修改';
+                    statusMsg.style.opacity = '1';
+                    statusMsg.innerText = '内容已存入本地存储';
+                    setTimeout(() => { statusMsg.style.opacity = '0'; }, 2000);
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>
